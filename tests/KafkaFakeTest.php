@@ -274,6 +274,11 @@ final class KafkaFakeTest extends LaravelKafkaTestCase
         $this->assertEquals(3, $producer->sendBatch($messageBatch));
     }
 
+    /**
+     * @throws \Carbon\Exceptions\Exception
+     * @throws Exception
+     * @throws ConsumerException
+     */
     public function testFakeConsumer(): void
     {
         Kafka::fake();
