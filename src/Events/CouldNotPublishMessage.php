@@ -2,12 +2,14 @@
 
 namespace Junges\Kafka\Events;
 
-final class CouldNotPublishMessage
+use Throwable;
+
+final readonly class CouldNotPublishMessage
 {
     public function __construct(
-        public readonly int $errorCode,
-        public readonly string $message,
-        public readonly \Throwable $throwable,
+        public int $errorCode,
+        public string $message,
+        public Throwable $throwable,
     ) {
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Junges\Kafka\Commit;
 
+use Exception;
 use JetBrains\PhpStorm\Pure;
 use Junges\Kafka\Contracts\Committer;
 use Junges\Kafka\Contracts\Sleeper;
@@ -10,7 +11,7 @@ use RdKafka\Message;
 
 class RetryableCommitter implements Committer
 {
-    private const RETRYABLE_ERRORS = [
+    private const array RETRYABLE_ERRORS = [
         RD_KAFKA_RESP_ERR_ILLEGAL_GENERATION,
         RD_KAFKA_RESP_ERR_REQUEST_TIMED_OUT,
         RD_KAFKA_RESP_ERR_REBALANCE_IN_PROGRESS,
@@ -23,13 +24,13 @@ class RetryableCommitter implements Committer
         $this->retryable = new Retryable($sleeper, $maximumRetries, self::RETRYABLE_ERRORS);
     }
 
-    /** @throws \Carbon\Exceptions\Exception */
+    /** @throws Exception */
     public function commitMessage(Message $message, bool $success): void
     {
         $this->retryable->retry(fn () => $this->committer->commitMessage($message, $success));
     }
 
-    /** @throws \Carbon\Exceptions\Exception */
+    /** @throws Exception */
     public function commitDlq(Message $message): void
     {
         $this->retryable->retry(fn () => $this->committer->commitDlq($message));

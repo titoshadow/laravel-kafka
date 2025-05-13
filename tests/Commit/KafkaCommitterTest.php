@@ -18,9 +18,7 @@ final class KafkaCommitterTest extends LaravelKafkaTestCase
             ->shouldReceive('commit')->once()
             ->andReturnSelf();
 
-        $this->app->bind(KafkaConsumer::class, function () use ($kafkaConsumer) {
-            return $kafkaConsumer->getMock();
-        });
+        $this->app->bind(KafkaConsumer::class, fn() => $kafkaConsumer->getMock());
 
         $config = new Config(
             broker: 'broker',
@@ -47,9 +45,7 @@ final class KafkaCommitterTest extends LaravelKafkaTestCase
             ->shouldReceive('commit')->once()
             ->andReturnSelf();
 
-        $this->app->bind(KafkaConsumer::class, function () use ($kafkaConsumer) {
-            return $kafkaConsumer->getMock();
-        });
+        $this->app->bind(KafkaConsumer::class, fn() => $kafkaConsumer->getMock());
 
         $config = new Config(
             broker: 'broker',

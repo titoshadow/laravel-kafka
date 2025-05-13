@@ -26,6 +26,7 @@ use Junges\Kafka\Retryable;
 use Junges\Kafka\Support\InfiniteTimer;
 use Junges\Kafka\Support\Timer;
 use RdKafka\Conf;
+use RdKafka\Exception;
 use RdKafka\KafkaConsumer;
 use RdKafka\Message;
 use RdKafka\Producer as KafkaProducer;
@@ -61,12 +62,12 @@ class Consumer implements MessageConsumer
     private readonly Retryable $retryable;
     private readonly CommitterFactory $committerFactory;
     private bool $stopRequested = false;
-    private ?Closure $whenStopConsuming;
+    private readonly ?Closure $whenStopConsuming;
     protected int $lastRestart = 0;
     protected Timer $restartTimer;
-    private Dispatcher $dispatcher;
+    private readonly Dispatcher $dispatcher;
 
-    public function __construct(private readonly Config $config, private readonly MessageDeserializer $deserializer, CommitterFactory $committerFactory = null)
+    public function __construct(private readonly Config $config, private readonly MessageDeserializer $deserializer, ?CommitterFactory $committerFactory = null)
     {
         $this->logger = app(Logger::class);
         $this->messageCounter = new MessageCounter($config->getMaxMessages());
@@ -325,8 +326,10 @@ class Consumer implements MessageConsumer
         }
     }
 
-    /** Send a message to the Dead Letter Queue. */
-    private function sendToDlq(Message $message, ?string $messageIdentifier = null, Throwable $throwable = null): void
+    /** Send a message to the Dead Letter Queue.
+     * @throws Exception
+     */
+    private function sendToDlq(Message $message, ?string $messageIdentifier = null, ?Throwable $throwable = null): void
     {
         $topic = $this->producer->newTopic($this->config->getDlq());
 
@@ -351,7 +354,7 @@ class Consumer implements MessageConsumer
         }
     }
 
-    private function buildHeadersForDlq(Message $message, Throwable $throwable = null): array
+    private function buildHeadersForDlq(Message $message, ?Throwable $throwable = null): array
     {
         if (! $throwable instanceof Throwable) {
             return [];
@@ -359,7 +362,7 @@ class Consumer implements MessageConsumer
 
         $throwableHeaders['kafka_throwable_message'] = $throwable->getMessage();
         $throwableHeaders['kafka_throwable_code'] = $throwable->getCode();
-        $throwableHeaders['kafka_throwable_class_name'] = get_class($throwable);
+        $throwableHeaders['kafka_throwable_class_name'] = $throwable::class;
 
         return array_merge($message->headers ?? [], $throwableHeaders);
     }

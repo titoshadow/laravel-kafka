@@ -8,13 +8,16 @@ use Illuminate\Support\Str;
 use Junges\Kafka\Contracts\ConsumerMessage;
 use Junges\Kafka\Contracts\Manager;
 use Junges\Kafka\Contracts\MessageConsumer;
+use Junges\Kafka\Exceptions\ConsumerException;
 use Junges\Kafka\Facades\Kafka;
 use Junges\Kafka\Message\ConsumedMessage;
 use Junges\Kafka\Message\Message;
 use Junges\Kafka\Producers\MessageBatch;
 use Junges\Kafka\Support\Testing\Fakes\KafkaFake;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Constraint\ExceptionMessageIsOrContains;
 use PHPUnit\Framework\ExpectationFailedException;
+use RdKafka\Exception;
 
 final class KafkaFakeTest extends LaravelKafkaTestCase
 {
@@ -124,18 +127,12 @@ final class KafkaFakeTest extends LaravelKafkaTestCase
         $this->fake->assertPublished($producer->getMessage());
 
 
-        $this->fake->assertPublished($producer->getMessage(), function ($message) use ($uuid) {
-            return $message->getKey() === $uuid;
-        });
+        $this->fake->assertPublished($producer->getMessage(), fn($message) => $message->getKey() === $uuid);
 
-        $this->fake->assertPublished($message = $producer->getMessage(), function () use ($message, $uuid) {
-            return $message->getKey() === $uuid;
-        });
+        $this->fake->assertPublished($message = $producer->getMessage(), fn() => $message->getKey() === $uuid);
 
         try {
-            $this->fake->assertPublished($message = $producer->getMessage(), function () use ($message, $uuid) {
-                return $message->getKey() === 'not-published-uuid';
-            });
+            $this->fake->assertPublished($message = $producer->getMessage(), fn() => $message->getKey() === 'not-published-uuid');
         } catch (ExpectationFailedException $exception) {
             $this->assertThat($exception, new ExceptionMessageIsOrContains('The expected message was not published.'));
         }
@@ -241,16 +238,12 @@ final class KafkaFakeTest extends LaravelKafkaTestCase
         $this->fake->assertPublishedOn('topic', $producer->getMessage());
 
         try {
-            $this->fake->assertPublishedOn('topic', $producer->getMessage(), function ($message) {
-                return $message->getKey() === 'different-key';
-            });
+            $this->fake->assertPublishedOn('topic', $producer->getMessage(), fn($message) => $message->getKey() === 'different-key');
         } catch (ExpectationFailedException $exception) {
             $this->assertThat($exception, new ExceptionMessageIsOrContains('The expected message was not published.'));
         }
 
-        $this->fake->assertPublishedOn('topic', $producer->getMessage(), function ($message) use ($uuid) {
-            return $message->getKey() === $uuid;
-        });
+        $this->fake->assertPublishedOn('topic', $producer->getMessage(), fn($message) => $message->getKey() === $uuid);
     }
 
     public function testNothingPublished(): void
@@ -483,6 +476,11 @@ final class KafkaFakeTest extends LaravelKafkaTestCase
         $this->assertEquals(count($messages), $consumer->consumedMessagesCount());
     }
 
+    /**
+     * @throws \Carbon\Exceptions\Exception
+     * @throws Exception
+     * @throws ConsumerException
+     */
     public function testFakeMultipleBatchConsumer(): void
     {
         Kafka::fake();
@@ -568,6 +566,11 @@ final class KafkaFakeTest extends LaravelKafkaTestCase
         $this->assertEquals(count($messages), $consumer->consumedMessagesCount());
     }
 
+    /**
+     * @throws Exception
+     * @throws \Carbon\Exceptions\Exception
+     * @throws ConsumerException
+     */
     public function testStopFakeBatchConsumer(): void
     {
         Kafka::fake();
@@ -619,7 +622,7 @@ final class KafkaFakeTest extends LaravelKafkaTestCase
         $this->assertEquals(2, $this->consumer->consumedMessagesCount());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_handle_macros(): void
     {
         Kafka::macro('onTopicExample', fn () => 'this is a test');

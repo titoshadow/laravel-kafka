@@ -18,7 +18,7 @@ class MessageBatch
     /** Storage of messages */
     private readonly SplDoublyLinkedList $messages;
 
-    private string $uuid;
+    private readonly string $uuid;
 
     private string $topic = '';
 

@@ -4,11 +4,11 @@ namespace Junges\Kafka\Events;
 
 use Junges\Kafka\Producers\MessageBatch;
 
-final class MessageBatchPublished
+final readonly class MessageBatchPublished
 {
     public function __construct(
-        public readonly MessageBatch $batch,
-        public readonly int $publishedCount,
+        public MessageBatch $batch,
+        public int $publishedCount,
     ) {
     }
 }

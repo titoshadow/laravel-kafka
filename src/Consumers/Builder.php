@@ -83,7 +83,7 @@ class Builder implements ConsumerBuilderContract
     }
 
     /** @inheritDoc */
-    public static function create(string $brokers, array $topics = [], string $groupId = null): self
+    public static function create(string $brokers, array $topics = [], ?string $groupId = null): self
     {
         return new Builder(
             brokers: $brokers,

@@ -4,11 +4,11 @@ namespace Junges\Kafka\Events;
 
 use Junges\Kafka\Contracts\ProducerMessage;
 
-final class BatchMessagePublished
+final readonly class BatchMessagePublished
 {
     public function __construct(
-        public readonly ProducerMessage $message,
-        public readonly string $batchUuid,
+        public ProducerMessage $message,
+        public string $batchUuid,
     ) {
     }
 }

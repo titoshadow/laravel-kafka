@@ -8,22 +8,18 @@ use RdKafka\Message;
 
 final class FailingCommitter implements Committer
 {
-    private int $timesToFail;
-    private Exception $failure;
     private int $timesTriedToCommitMessage = 0;
     private int $timesTriedToCommitDlq = 0;
     private int $commitCount = 0;
 
-    public function __construct(Exception $failure, int $timesToFail)
+    public function __construct(private readonly Exception $failure, private readonly int $timesToFail)
     {
-        $this->failure = $failure;
-        $this->timesToFail = $timesToFail;
     }
 
     /**
      * @throws \Exception
      */
-    public function commitMessage(Message $message = null, bool $success = null): void
+    public function commitMessage(?Message $message = null, ?bool $success = null): void
     {
         $this->timesTriedToCommitMessage++;
         $this->commit();

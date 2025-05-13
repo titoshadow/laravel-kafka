@@ -56,9 +56,7 @@ abstract class LaravelKafkaTestCase extends Orchestra
             ->shouldReceive('produce')
             ->andReturn();
 
-        $this->app->bind(Producer::class, function () use ($mockedProducer) {
-            return $mockedProducer->getMock();
-        });
+        $this->app->bind(Producer::class, fn() => $mockedProducer->getMock());
 
         $this->mockKafkaProducer();
     }
@@ -81,9 +79,7 @@ abstract class LaravelKafkaTestCase extends Orchestra
             ->andReturn(RD_KAFKA_RESP_ERR_NO_ERROR)
             ->getMock();
 
-        $this->app->bind(KafkaProducer::class, function () use ($mockedKafkaProducer) {
-            return $mockedKafkaProducer;
-        });
+        $this->app->bind(KafkaProducer::class, fn() => $mockedKafkaProducer);
     }
 
     protected function mockConsumerWithMessageFailingCommit(Message $message): void
@@ -98,9 +94,7 @@ abstract class LaravelKafkaTestCase extends Orchestra
             ->never()
             ->getMock();
 
-        $this->app->bind(KafkaConsumer::class, function () use ($mockedKafkaConsumer) {
-            return $mockedKafkaConsumer;
-        });
+        $this->app->bind(KafkaConsumer::class, fn() => $mockedKafkaConsumer);
     }
 
     protected function mockConsumerWithMessage(Message ...$message): void

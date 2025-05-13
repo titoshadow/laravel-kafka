@@ -187,9 +187,7 @@ final class KafkaTest extends LaravelKafkaTestCase
             ->andReturn(RD_KAFKA_RESP_ERR_NO_ERROR)
             ->getMock();
 
-        $this->app->bind(Producer::class, function () use ($mockedProducer) {
-            return $mockedProducer;
-        });
+        $this->app->bind(Producer::class, fn() => $mockedProducer);
 
         $message = Message::create()
             ->withHeaders(['foo' => 'bar'])
@@ -239,9 +237,7 @@ final class KafkaTest extends LaravelKafkaTestCase
             ->andReturn(RD_KAFKA_RESP_ERR_NO_ERROR)
             ->getMock();
 
-        $this->app->bind(Producer::class, function () use ($mockedProducer) {
-            return $mockedProducer;
-        });
+        $this->app->bind(Producer::class, fn() => $mockedProducer);
 
         /** @var ProducerBuilder $producer */
         $producer = Kafka::publish()
@@ -326,11 +322,9 @@ final class KafkaTest extends LaravelKafkaTestCase
 
         Kafka::publish()->onTopic('test')->withBodyKey('foo', 'bar')->send();
 
-        Event::assertDispatched(CouldNotPublishMessageEvent::class, function (CouldNotPublishMessageEvent $event) use ($expectedMessage) {
-            return $event->throwable instanceof CouldNotPublishMessage
-                && $event->errorCode === RD_KAFKA_RESP_ERR__FAIL
-                && $event->message === $expectedMessage;
-        });
+        Event::assertDispatched(CouldNotPublishMessageEvent::class, fn(CouldNotPublishMessageEvent $event) => $event->throwable instanceof CouldNotPublishMessage
+            && $event->errorCode === RD_KAFKA_RESP_ERR__FAIL
+            && $event->message === $expectedMessage);
     }
 
     public function testSendMessageBatch(): void
@@ -359,27 +353,22 @@ final class KafkaTest extends LaravelKafkaTestCase
             ->once()
             ->getMock();
 
-        $this->app->bind(Producer::class, function () use ($mockedProducer) {
-            return $mockedProducer;
-        });
+        $this->app->bind(Producer::class, fn() => $mockedProducer);
 
         Event::fake();
 
         Kafka::publish()->withBodyKey('foo', 'bar')->sendBatch($messageBatch);
 
-        Event::assertDispatched(PublishingMessageBatch::class, function (PublishingMessageBatch $event) use ($messageBatch) {
-            return $event->batch === $messageBatch;
-        });
+        Event::assertDispatched(PublishingMessageBatch::class, fn(PublishingMessageBatch $event) => $event->batch === $messageBatch);
         Event::assertDispatchedTimes(BatchMessagePublished::class, 3);
-        Event::assertDispatched(BatchMessagePublished::class, function (BatchMessagePublished $event) use ($expectedUuid) {
-            return $event->batchUuid === $expectedUuid;
-        });
-        Event::assertDispatched(MessageBatchPublished::class, function (MessageBatchPublished $event) use ($messageBatch) {
-            return $event->batch === $messageBatch
-                && $event->publishedCount === 3;
-        });
+        Event::assertDispatched(BatchMessagePublished::class, fn(BatchMessagePublished $event) => $event->batchUuid === $expectedUuid);
+        Event::assertDispatched(MessageBatchPublished::class, fn(MessageBatchPublished $event) => $event->batch === $messageBatch
+            && $event->publishedCount === 3);
     }
 
+    /**
+     * @throws CouldNotPublishMessage
+     */
     #[Test]
     public function it_throws_an_exception_if_there_is_a_message_in_batch_with_no_topic_specified(): void
     {
@@ -398,13 +387,11 @@ final class KafkaTest extends LaravelKafkaTestCase
     {
         $sasl = new Sasl(username: 'username', password: 'password', mechanisms: 'mechanisms');
 
-        Kafka::macro('defaultProducer', function () {
-            return $this->publish()->withSasl(
-                username: 'username',
-                password: 'password',
-                mechanisms: 'mechanisms',
-            );
-        });
+        Kafka::macro('defaultProducer', fn() => $this->publish()->withSasl(
+            username: 'username',
+            password: 'password',
+            mechanisms: 'mechanisms',
+        ));
 
         $producer = Kafka::defaultProducer();
 
@@ -412,7 +399,7 @@ final class KafkaTest extends LaravelKafkaTestCase
         $this->assertEquals($sasl, $this->getPropertyWithReflection('saslConfig', $producer));
     }
 
-    /** @test */
+    #[Test]
     public function it_stores_published_messages_when_using_macros(): void
     {
         $expectedMessage = (new Message)
@@ -421,9 +408,7 @@ final class KafkaTest extends LaravelKafkaTestCase
             ->onTopic('topic')
             ->withKey($uuid = Str::uuid()->toString());
 
-        Kafka::macro('testProducer', function () use ($expectedMessage) {
-            return $this->publish()->withMessage($expectedMessage);
-        });
+        Kafka::macro('testProducer', fn() => $this->publish()->withMessage($expectedMessage));
 
         Kafka::fake();
         Kafka::testProducer()->send();
